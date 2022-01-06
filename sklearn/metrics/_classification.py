@@ -1999,6 +1999,7 @@ def classification_report(
     y_true,
     y_pred,
     *,
+    beta=1.0,
     labels=None,
     target_names=None,
     sample_weight=None,
@@ -2017,6 +2018,8 @@ def classification_report(
 
     y_pred : 1d array-like, or label indicator array / sparse matrix
         Estimated targets as returned by a classifier.
+
+    beta : ...
 
     labels : array-like of shape (n_labels,), default=None
         Optional list of label indices to include in the report.
@@ -2044,7 +2047,7 @@ def classification_report(
     Returns
     -------
     report : str or dict
-        Text summary of the precision, recall, F1 score for each class.
+        Text summary of the precision, recall, F-beta score for each class.
         Dictionary returned if output_dict is True. Dictionary has the
         following structure::
 
@@ -2137,17 +2140,18 @@ def classification_report(
     if target_names is None:
         target_names = ["%s" % l for l in labels]
 
-    headers = ["precision", "recall", "f1-score", "support"]
+    headers = ["precision", "recall", "fbeta-score", "support"]
     # compute per-class results without averaging
-    p, r, f1, s = precision_recall_fscore_support(
+    p, r, fbeta, s = precision_recall_fscore_support(
         y_true,
         y_pred,
+        beta=beta,
         labels=labels,
         average=None,
         sample_weight=sample_weight,
         zero_division=zero_division,
     )
-    rows = zip(target_names, p, r, f1, s)
+    rows = zip(target_names, p, r, fbeta, s)
 
     if y_type.startswith("multilabel"):
         average_options = ("micro", "macro", "weighted", "samples")
@@ -2178,15 +2182,16 @@ def classification_report(
             line_heading = average + " avg"
 
         # compute averages with specified averaging method
-        avg_p, avg_r, avg_f1, _ = precision_recall_fscore_support(
+        avg_p, avg_r, avg_fbeta, _ = precision_recall_fscore_support(
             y_true,
             y_pred,
+            beta=beta
             labels=labels,
             average=average,
             sample_weight=sample_weight,
             zero_division=zero_division,
         )
-        avg = [avg_p, avg_r, avg_f1, np.sum(s)]
+        avg = [avg_p, avg_r, avg_fbeta, np.sum(s)]
 
         if output_dict:
             report_dict[line_heading] = dict(zip(headers, [i.item() for i in avg]))
